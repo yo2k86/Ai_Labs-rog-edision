@@ -1,1 +1,840 @@
 
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ailabs Mini Browser</title>
+    
+    <!-- TAMBAHAN META TAG UNTUK PWA -->
+    <meta name="theme-color" content="#050505">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://i.ibb.co.com/DgtSyw0H/icon-192.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        rog: {
+                            red: '#ED1C24',
+                            darkred: '#8a0000',
+                            black: '#0a0a0a',
+                            darkgray: '#1a1a1a',
+                            gray: '#2d2d2d',
+                            lightgray: '#4a4a4a',
+                            accent: '#ff3333'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Background - Memanggil foto profil */
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('foto-profil.png'), linear-gradient(135deg, #0a0a0a 0%, #1a0505 100%); /* Added fallback gradient */
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+        }
+
+        /* Overlay gelap agar teks tetap terbaca */
+        .ambient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%);
+            z-index: -1;
+        }
+
+        /* Glossy Glassmorphism Effect */
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.35) 0%, rgba(5, 5, 5, 0.6) 100%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid rgba(255, 255, 255, 0.4);
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Glossy Inputs */
+        .glossy-input {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        .glossy-input:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: #ED1C24;
+            box-shadow: 0 0 20px rgba(237, 28, 36, 0.4), inset 0 4px 10px rgba(0,0,0,0.5);
+            outline: none;
+        }
+
+        /* Running Light Animation */
+        @keyframes running-light-anim {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .running-light-border {
+            position: relative;
+        }
+
+        .running-light-border::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(237,28,36,0.8), #ffffff, rgba(237,28,36,0.8), transparent);
+            background-size: 200% 100%;
+            animation: running-light-anim 3s linear infinite;
+            border-radius: 10px 10px 0 0;
+            pointer-events: none;
+        }
+
+        .rog-glow-text {
+            text-shadow: 0 0 10px rgba(237, 28, 36, 0.8), 0 0 20px rgba(237, 28, 36, 0.4);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ED1C24; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff3333; 
+        }
+
+        /* Browser Iframe styling */
+        #browser-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* --- UPGRADE UI CAHAYA & KILAUAN --- */
+        
+        /* Efek Cahaya Berputar (Magic Card) */
+        @keyframes spin-light {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .magic-card {
+            position: relative;
+            overflow: hidden;
+            background: rgba(10, 10, 10, 0.4);
+            border: none !important;
+        }
+        
+        .magic-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(from 0deg, transparent 70%, #ff3333 80%, #ED1C24 100%);
+            animation: spin-light 3s linear infinite;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        .magic-card:hover::before {
+            opacity: 1;
+        }
+        
+        .magic-card-content {
+            position: absolute;
+            inset: 2px;
+            background: rgba(15, 15, 15, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: inherit;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+        
+        .magic-card:hover .magic-card-content {
+            background: rgba(20, 10, 10, 0.9);
+        }
+
+        /* Efek Kilauan Kaca Menyapu (Glass Sweep) */
+        .glass-sweep {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-sweep::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.25), transparent);
+            transform: skewX(-25deg);
+            animation: sweep 6s infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes sweep {
+            0% { left: -150%; }
+            20%, 100% { left: 200%; }
+        }
+
+        /* Efek Partikel Berkilau di Latar Belakang */
+        #particles-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .glowing-particle {
+            position: absolute;
+            background: #ED1C24;
+            box-shadow: 0 0 10px #ED1C24, 0 0 20px #ff3333, 0 0 30px #ffffff;
+            border-radius: 50%;
+            animation: floatUp linear infinite;
+            opacity: 0;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            20% { opacity: 0.8; transform: translateY(80vh) scale(1); }
+            80% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) scale(0); opacity: 0; }
+        }
+
+        .modal-enter {
+            animation: modalFadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+    <div class="ambient-glow"></div>
+    <div class="ambient-overlay"></div>
+
+    <!-- Wadah Partikel Cahaya Berkilauan -->
+    <div id="particles-container"></div>
+
+    <div id="login-view" class="flex-grow flex items-center justify-center p-4 z-50 relative">
+        <!-- Glow orb di belakang login box agar lebih dramatis -->
+        <div class="absolute w-72 h-72 bg-rog-red/30 rounded-full blur-[100px] pointer-events-none"></div>
+        
+        <div id="login-box" class="glass-panel glass-sweep running-light-border w-full max-w-sm p-8 text-center transition-transform duration-100 relative">
+            <div class="relative z-10 flex flex-col items-center">
+                <img src="https://i.ibb.co.com/DgtSyw0H/icon-192.png" alt="Ailabs Auth Logo" class="h-28 w-auto mb-6 filter drop-shadow-[0_0_20px_rgba(237,28,36,0.9)]" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100%\' height=\'100%\' fill=\'none\' stroke=\'%23ED1C24\' stroke-width=\'4\' rx=\'20\'/><text x=\'50\' y=\'65\' font-family=\'Arial\' font-size=\'50\' font-weight=\'bold\' fill=\'%23ED1C24\' text-anchor=\'middle\'>A</text></svg>'">
+                <h2 class="text-3xl font-bold rog-glow-text mb-2 uppercase tracking-widest w-full">Ailabs Portal</h2>
+                <p class="text-[10px] text-gray-200 mb-8 px-2 w-full font-semibold tracking-[0.2em] uppercase">System Secure Login Required</p>
+                
+                <div class="relative mb-6 w-full text-left">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-envelope text-gray-300"></i>
+                    </div>
+                    <input type="email" id="login-email" class="glossy-input w-full rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-400" placeholder="email@gmail.com" onkeypress="if(event.key === 'Enter') processLogin()">
+                </div>
+                
+                <p id="login-error-msg" class="text-rog-accent text-xs hidden mb-4 font-bold animate-pulse w-full drop-shadow-[0_0_5px_rgba(237,28,36,1)]"></p>
+                
+                <button id="login-btn" onclick="processLogin()" class="w-full py-4 rounded-xl bg-gradient-to-r from-rog-darkred via-rog-red to-rog-accent hover:from-rog-red hover:to-[#ff4d4d] transition-all text-white font-bold tracking-widest uppercase shadow-[0_0_20px_rgba(237,28,36,0.6)] hover:shadow-[0_0_35px_rgba(237,28,36,0.9)] flex items-center justify-center gap-2 transform hover:scale-[1.03] border border-white/20 hover:border-white/50">
+                    <i class="fas fa-fingerprint text-lg"></i> Authenticate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="flex-col flex-grow w-full hidden">
+        
+        <!-- HEADER -->
+        <header class="glass-panel glass-sweep running-light-border sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4 cursor-pointer" onclick="handleLogoClick()" title="Klik 3x untuk buka kunci Developer">
+                <img src="https://i.ibb.co.com/YBm1z8F3/Chat-GPT-Image-3-Agu-2026-22-08-09.png" alt="ROG Logo" class="h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(237,28,36,0.8)]">
+                <div class="flex flex-col">
+                    <h1 class="text-2xl font-bold tracking-wider rog-glow-text uppercase leading-tight">Ailabs</h1>
+                    <span class="text-[10px] text-gray-300 tracking-widest uppercase font-bold mt-0.5">Developer by Bang Pro</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex flex-col text-right mr-2 border-r border-rog-red/30 pr-4">
+                    <span id="user-name-display" class="text-sm font-bold text-white tracking-wider">Loading...</span>
+                    <span id="user-email-display" class="text-xs text-gray-400">...</span>
+                    <span class="text-[10px] text-green-400 mt-0.5"><i class="fas fa-circle text-[8px] animate-pulse mr-1"></i>Status: Active</span>
+                </div>
+
+                <button onclick="handleLogout()" class="w-10 h-10 rounded-full bg-black/50 hover:bg-rog-red text-white flex items-center justify-center transition border border-gray-600 hover:border-white shadow-[0_0_10px_rgba(237,28,36,0.3)]" title="Keluar / Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+
+                <button onclick="backToLogin()" class="hidden sm:flex w-10 h-10 rounded-full bg-black/50 hover:bg-rog-red text-white items-center justify-center transition border border-gray-600 hover:border-white shadow-[0_0_10px_rgba(237,28,36,0.3)]" title="Kembali ke Tampilan Awal" id="back-to-login-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div id="clock" class="text-rog-accent font-orbitron text-lg border border-rog-red/30 px-3 py-1 rounded bg-black/60 shadow-[inset_0_0_10px_rgba(237,28,36,0.2)]">00:00:00</div>
+                
+                <button id="admin-add-btn" onclick="openAddModal()" class="hidden w-10 h-10 rounded-full bg-rog-red hover:bg-rog-accent text-white flex items-center justify-center transition border border-rog-darkred shadow-[0_0_10px_rgba(237,28,36,0.5)]" title="Tambah Aplikasi">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </header>
+
+        <main id="main-content" class="flex-grow p-8 flex flex-col items-center">
+            <div id="app-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 max-w-6xl w-full mt-8">
+                <!-- Apps injected dynamically -->
+            </div>
+        </main>
+
+        <div id="browser-view" class="hidden flex-col flex-grow w-full h-[calc(100vh-80px)] absolute top-[80px] left-0 bg-black/90 z-30 glass-panel">
+            <div class="flex items-center bg-black/80 border-b border-rog-red/30 p-2 gap-2">
+                <button onclick="closeApp()" class="p-2 rounded hover:bg-rog-gray transition text-gray-300 hover:text-white" title="Kembali ke Beranda">
+                    <i class="fas fa-home"></i>
+                </button>
+                <div class="flex-grow flex items-center glossy-input rounded-lg px-4 py-2 overflow-hidden relative">
+                    <div class="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[running-light-anim_4s_linear_infinite]"></div>
+                    <i class="fas fa-shield-alt text-green-400 text-sm mr-3"></i>
+                    <input type="text" id="url-bar" class="bg-transparent text-white w-full outline-none text-sm font-sans z-10 placeholder-gray-400" readonly>
+                </div>
+                <button onclick="openExternal()" class="p-2 rounded hover:bg-rog-gray transition text-gray-300 hover:text-white ml-2" title="Buka di Tab Baru">
+                    <i class="fas fa-external-link-alt"></i>
+                </button>
+                <button onclick="closeApp()" class="p-2 ml-2 rounded bg-transparent hover:bg-rog-accent transition text-gray-300 hover:text-white border border-transparent hover:border-white shadow-none hover:shadow-[0_0_10px_rgba(237,28,36,0.8)]" title="Tutup Aplikasi">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="flex-grow relative w-full h-full bg-white">
+                <iframe id="browser-iframe" src="about:blank" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 backdrop-blur-md">
+        <div class="glass-panel glass-sweep running-light-border p-6 w-full max-w-md modal-enter relative">
+            <div class="relative z-10">
+                <button onclick="closeAddModal()" class="absolute -top-2 -right-2 text-gray-300 hover:text-white hover:rotate-90 transition-all bg-black/50 w-8 h-8 rounded-full flex items-center justify-center border border-white/20">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-rog-red to-rog-darkred flex items-center justify-center shadow-[0_0_15px_rgba(237,28,36,0.8)] border border-white/20">
+                        <i class="fas fa-plus text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold rog-glow-text uppercase" id="modal-title">Add Interface</h3>
+                </div>
+                
+                <form id="add-app-form" onsubmit="handleAddApp(event)">
+                    <input type="hidden" id="edit-app-id">
+                    <div class="mb-4">
+                        <label class="block text-[10px] text-gray-300 mb-1 uppercase tracking-wider font-bold">Application Name</label>
+                        <input type="text" id="app-name" required class="glossy-input w-full rounded-lg py-2.5 px-4 text-white" placeholder="E.g., Youtube">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-[10px] text-gray-300 mb-1 uppercase tracking-wider font-bold">URL</label>
+                        <input type="url" id="app-url" required class="glossy-input w-full rounded-lg py-2.5 px-4 text-white" placeholder="https://...">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-[10px] text-gray-300 mb-1 uppercase tracking-wider font-bold">Logo URL (Optional)</label>
+                        <input type="url" id="app-logo" class="glossy-input w-full rounded-lg py-2.5 px-4 text-white" placeholder="Leave empty for auto logo">
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" onclick="closeAddModal()" class="px-5 py-2.5 rounded-lg glossy-input text-white font-semibold hover:bg-white/10 transition-colors">Cancel</button>
+                        <button type="submit" class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-rog-red to-rog-accent hover:from-rog-accent hover:to-[#ff4d4d] transition-all text-white font-bold shadow-[0_0_15px_rgba(237,28,36,0.6)] hover:shadow-[0_0_25px_rgba(237,28,36,0.9)] border border-white/20 transform hover:scale-105">Install</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL PASSWORD ADMIN -->
+    <div id="password-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 backdrop-blur-md">
+        <div id="password-box" class="glass-panel glass-sweep running-light-border p-8 w-full max-w-sm modal-enter text-center transition-transform duration-100 relative">
+            <div class="relative z-10 flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-rog-darkred to-rog-red flex items-center justify-center shadow-[0_0_20px_rgba(237,28,36,0.8)] border border-white/20 mb-4">
+                    <i class="fas fa-user-shield text-2xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold rog-glow-text uppercase mb-1">Admin Access</h3>
+                <p class="text-[10px] text-gray-300 mb-6 tracking-widest uppercase">Enter Developer Protocol</p>
+                
+                <div class="relative mb-5 w-full">
+                    <input type="password" id="admin-password" class="glossy-input w-full rounded-xl py-3 pl-4 pr-12 text-white text-center tracking-[0.3em] font-bold" placeholder="••••••••" onkeypress="if(event.key === 'Enter') verifyPassword()">
+                    <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-2 px-3 flex items-center text-gray-300 hover:text-white transition-colors">
+                        <i id="eye-icon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+
+                <p id="password-error" class="text-rog-accent text-xs hidden mb-4 font-bold drop-shadow-[0_0_5px_rgba(237,28,36,1)]">Akses Ditolak!</p>
+                
+                <div class="mt-2 flex w-full gap-3">
+                    <button onclick="closePasswordModal()" class="flex-1 py-3 rounded-xl glossy-input text-white font-semibold hover:bg-white/10 transition-colors">Batal</button>
+                    <button onclick="verifyPassword()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-rog-red to-rog-accent hover:from-rog-accent hover:to-[#ff4d4d] transition-all text-white font-bold shadow-[0_0_15px_rgba(237,28,36,0.6)] hover:shadow-[0_0_25px_rgba(237,28,36,0.9)] border border-white/20 transform hover:scale-105">Unlock</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwgYCCYXKE1RPLdUCeq3Lv7rqGaOPkl19P9LmsiXDFuAWNpgtlHI2-NWoJ85v10QuDVOw/exec";
+        
+        // ↓↓↓ MASUKKAN URL DEPLOY SPREADSHEET KEDUA (DATABASE APLIKASI) DI SINI NANTI ↓↓↓
+        const APPS_DB_URL = "https://script.google.com/macros/s/AKfycbzAo9Hz6aJo8ZTjuOIcl76EL-uvVrxOgzhnzExAmwy92sDmrEez8qVkiBPaam1DXHpdLg/exec"; 
+
+        let isAdmin = false;
+        let clickCount = 0;
+        let clickTimer;
+
+        // Default Apps requested
+        let apps = [
+            {
+                id: 'app_1',
+                name: 'Facebook',
+                url: 'https://www.facebook.com',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png'
+            },
+            {
+                id: 'app_2',
+                name: 'Gemini',
+                url: 'https://gemini.google.com',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/1024px-Google_Gemini_logo.svg.png'
+            },
+            {
+                id: 'app_3',
+                name: 'ChatGPT',
+                url: 'https://chat.openai.com',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png'
+            },
+            {
+                id: 'app_4',
+                name: 'Sesh.fm',
+                url: 'https://sesh.fm',
+                logo: ''
+            }
+        ];
+
+        function initAuth() {
+            const savedUser = localStorage.getItem('ailabsSession');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                showMainApp(user);
+            } else {
+                document.getElementById('login-view').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('hidden');
+            }
+        }
+
+        async function processLogin() {
+            const emailInput = document.getElementById('login-email').value.trim();
+            const btn = document.getElementById('login-btn');
+            const errorMsg = document.getElementById('login-error-msg');
+            const loginBox = document.getElementById('login-box');
+
+            if (!emailInput) {
+                errorMsg.textContent = "Harap masukkan Gmail terlebih dahulu!";
+                errorMsg.classList.remove('hidden');
+                shakeElement(loginBox);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Verifying...';
+            errorMsg.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${GAS_URL}?email=${encodeURIComponent(emailInput)}`, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                const responseText = await response.text();
+                
+                try {
+                    const data = JSON.parse(responseText);
+
+                    if (data.success) {
+                        const userData = { email: data.email, username: data.username };
+                        localStorage.setItem('ailabsSession', JSON.stringify(userData));
+                        showMainApp(userData);
+                    } else {
+                        errorMsg.textContent = data.message || "Akses ditolak oleh database.";
+                        errorMsg.classList.remove('hidden');
+                        shakeElement(loginBox);
+                    }
+                } catch (parseError) {
+                    errorMsg.innerHTML = "<b>Gagal!</b> Cek deploy Google Script: Pastikan 'Who has access' diset ke <b>'Anyone'</b>.";
+                    errorMsg.classList.remove('hidden');
+                    shakeElement(loginBox);
+                }
+
+            } catch (err) {
+                errorMsg.textContent = "Gagal terhubung ke database Spreadsheet.";
+                errorMsg.classList.remove('hidden');
+                shakeElement(loginBox);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Login Access';
+            }
+        }
+
+        function showMainApp(user) {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('flex');
+            document.getElementById('back-to-login-btn').classList.remove('hidden');
+            document.getElementById('back-to-login-btn').classList.add('flex');
+            
+            document.getElementById('user-name-display').textContent = user.username;
+            document.getElementById('user-email-display').textContent = user.email;
+            
+            loadApps();
+        }
+
+        function backToLogin() {
+             document.getElementById('app-container').classList.add('hidden');
+             document.getElementById('app-container').classList.remove('flex');
+             document.getElementById('login-view').classList.remove('hidden');
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('ailabsSession');
+            location.reload();
+        }
+
+        async function loadApps() {
+            // 1. TAMPILKAN DATA LOKAL SECARA INSTAN (Tanpa Loading Screen)
+            const savedApps = localStorage.getItem('ailabs_v3_apps');
+            if (savedApps) apps = JSON.parse(savedApps);
+            renderApps();
+
+            // 2. CEK CLOUD DI LATAR BELAKANG (Diam-diam)
+            if (APPS_DB_URL !== "") {
+                // Munculkan indikator sinkronisasi kecil di sudut tanpa mengganggu klik
+                let mainContent = document.getElementById('main-content');
+                let syncIcon = document.getElementById('sync-status-icon');
+                if(!syncIcon) {
+                    syncIcon = document.createElement('div');
+                    syncIcon.id = 'sync-status-icon';
+                    syncIcon.className = 'absolute top-6 right-6 text-[10px] text-gray-400 font-bold tracking-widest animate-pulse z-0 hidden sm:flex items-center gap-1';
+                    syncIcon.innerHTML = '<i class="fas fa-satellite-dish"></i> SYNC';
+                    mainContent.appendChild(syncIcon);
+                }
+
+                try {
+                    const response = await fetch(APPS_DB_URL + "?action=getApps", {
+                        method: 'GET',
+                        redirect: 'follow'
+                    });
+                    
+                    const textData = await response.text();
+                    
+                    if (textData.trim().startsWith('<')) {
+                        throw new Error("Akses Google Script terblokir.");
+                    }
+                    
+                    const data = JSON.parse(textData);
+                    if (data.success && data.apps && data.apps.length > 0) {
+                        apps = data.apps;
+                        // Simpan yang terbaru ke lokal
+                        localStorage.setItem('ailabs_v3_apps', JSON.stringify(apps)); 
+                        // Perbarui tampilan dengan data terbaru dari cloud
+                        renderApps();
+                    }
+                } catch (err) {
+                    console.warn("Info Cloud:", err.message);
+                } finally {
+                    if(syncIcon) syncIcon.remove();
+                }
+            }
+        }
+
+        async function saveApps() {
+            // Render UI langsung agar aplikasi terasa sangat cepat tanpa lag
+            renderApps();
+            // Simpan sebagai backup lokal
+            localStorage.setItem('ailabs_v3_apps', JSON.stringify(apps)); 
+
+            if (APPS_DB_URL !== "") {
+                const addBtn = document.getElementById('admin-add-btn');
+                const origIcon = addBtn.innerHTML;
+                addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; 
+                
+                try {
+                    const response = await fetch(APPS_DB_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'saveApps', data: apps }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        redirect: 'follow'
+                    });
+                    
+                    const textData = await response.text();
+                    if (textData.trim().startsWith('<')) {
+                        console.warn("Gagal menyimpan ke Cloud: Akses Google Script terblokir.");
+                    }
+                } catch (err) {
+                    console.error("Gagal menyimpan ke Cloud:", err);
+                } finally {
+                    addBtn.innerHTML = origIcon;
+                }
+            }
+        }
+
+        function generateDefaultLogo(name) {
+            const firstLetter = name ? name.charAt(0).toUpperCase() : 'A';
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="#1a1a1a" stroke="#ED1C24" stroke-width="4"/><text x="50" y="70" font-family="Arial" font-size="60" font-weight="bold" fill="#ED1C24" text-anchor="middle">${firstLetter}</text></svg>`;
+            // Encode the SVG properly so it doesn't break HTML attributes (this fixed the syntax error)
+            return 'data:image/svg+xml,' + encodeURIComponent(svg);
+        }
+
+        function renderApps() {
+            const grid = document.getElementById('app-grid');
+            grid.innerHTML = '';
+
+            apps.forEach(app => {
+                const appDiv = document.createElement('div');
+                // Mengganti style card menjadi magic-card (cahaya berputar)
+                appDiv.className = 'magic-card group flex flex-col items-center justify-center p-4 rounded-xl hover:shadow-[0_0_30px_rgba(237,28,36,0.6)] hover:-translate-y-2 transition-all duration-300 cursor-pointer h-32 w-full';
+                
+                const imgSrc = app.logo ? app.logo : generateDefaultLogo(app.name);
+
+                let adminButtons = '';
+                if (isAdmin) {
+                    adminButtons = `
+                        <button onclick="event.stopPropagation(); deleteApp('${app.id}')" class="absolute -top-2 -right-2 w-8 h-8 bg-rog-red rounded-full text-white opacity-0 group-hover:opacity-100 transition shadow-[0_0_15px_rgba(237,28,36,1)] z-20 flex items-center justify-center hover:scale-110">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); openEditModal('${app.id}')" class="absolute -top-2 -left-2 w-8 h-8 bg-gray-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition shadow-[0_0_15px_rgba(0,0,0,1)] z-20 flex items-center justify-center hover:scale-110 hover:bg-gray-500">
+                            <i class="fas fa-pen text-xs"></i>
+                        </button>
+                    `;
+                }
+
+                appDiv.innerHTML = `
+                    <div class="magic-card-content">
+                        ${adminButtons}
+                        <div class="w-14 h-14 mb-3 rounded-lg overflow-hidden bg-black/60 p-1.5 border border-gray-600/50 group-hover:border-rog-red/80 transition-colors flex items-center justify-center relative z-10">
+                            <img src="${imgSrc}" alt="${app.name}" class="w-full h-full object-contain rounded-md filter group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all" onerror="this.src='${generateDefaultLogo(app.name)}'">
+                        </div>
+                        <span class="text-sm font-bold tracking-wider text-gray-300 group-hover:text-white group-hover:rog-glow-text text-center w-full truncate relative z-10">${app.name}</span>
+                    </div>
+                `;
+                
+                appDiv.onclick = () => openApp(app.url);
+                grid.appendChild(appDiv);
+            });
+        }
+
+        function handleLogoClick() {
+            clickCount++;
+            clearTimeout(clickTimer);
+            
+            if (clickCount >= 3) {
+                document.getElementById('password-modal').classList.remove('hidden');
+                document.getElementById('admin-password').value = '';
+                document.getElementById('password-error').classList.add('hidden');
+                document.getElementById('admin-password').focus();
+                
+                const pwdInput = document.getElementById('admin-password');
+                const eyeIcon = document.getElementById('eye-icon');
+                pwdInput.type = "password";
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+
+                clickCount = 0;
+            } else {
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 1000);
+            }
+        }
+
+        function togglePassword() {
+            const pwdInput = document.getElementById('admin-password');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (pwdInput.type === "password") {
+                pwdInput.type = "text";
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                pwdInput.type = "password";
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        function verifyPassword() {
+            const pwd = document.getElementById('admin-password').value;
+            const errorMsg = document.getElementById('password-error');
+            const box = document.getElementById('password-box');
+
+            if (pwd === '@Kr333wol') {
+                isAdmin = true;
+                closePasswordModal();
+                document.getElementById('admin-add-btn').classList.remove('hidden');
+                renderApps();
+            } else {
+                errorMsg.classList.remove('hidden');
+                shakeElement(box);
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('add-modal').classList.remove('hidden');
+            document.getElementById('add-app-form').reset();
+            document.getElementById('edit-app-id').value = '';
+            document.getElementById('modal-title').textContent = 'Add Interface';
+            document.getElementById('app-name').focus();
+        }
+
+        function openEditModal(id) {
+            const app = apps.find(a => a.id === id);
+            if(app) {
+                document.getElementById('add-modal').classList.remove('hidden');
+                document.getElementById('edit-app-id').value = app.id;
+                document.getElementById('app-name').value = app.name;
+                document.getElementById('app-url').value = app.url;
+                document.getElementById('app-logo').value = app.logo;
+                document.getElementById('modal-title').textContent = 'Edit Interface';
+            }
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+        }
+
+        function handleAddApp(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-app-id').value;
+            const name = document.getElementById('app-name').value;
+            const url = document.getElementById('app-url').value;
+            const logo = document.getElementById('app-logo').value;
+
+            if (id) {
+                const index = apps.findIndex(a => a.id === id);
+                if(index !== -1) {
+                    apps[index] = { ...apps[index], name, url, logo };
+                }
+            } else {
+                const newApp = {
+                    id: 'app_' + Date.now(),
+                    name,
+                    url,
+                    logo
+                };
+                apps.push(newApp);
+            }
+
+            saveApps();
+            closeAddModal();
+        }
+
+        function deleteApp(id) {
+            apps = apps.filter(app => app.id !== id);
+            saveApps();
+        }
+
+        const browserView = document.getElementById('browser-view');
+        const mainContent = document.getElementById('main-content');
+        const iframe = document.getElementById('browser-iframe');
+        const urlBar = document.getElementById('url-bar');
+
+        function openApp(url) {
+            mainContent.classList.add('hidden');
+            browserView.classList.remove('hidden');
+            browserView.classList.add('flex');
+            urlBar.value = url;
+            iframe.src = url;
+        }
+
+        function closeApp() {
+            browserView.classList.add('hidden');
+            browserView.classList.remove('flex');
+            mainContent.classList.remove('hidden');
+            iframe.src = 'about:blank';
+            urlBar.value = '';
+        }
+
+        function openExternal() {
+            const currentUrl = urlBar.value;
+            if (currentUrl && currentUrl !== 'about:blank') {
+                window.open(currentUrl, '_blank');
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', { hour12: false });
+            document.getElementById('clock').textContent = timeString;
+        }
+
+        function shakeElement(el) {
+            el.style.transform = 'scale(1) translateX(-10px)';
+            setTimeout(() => el.style.transform = 'scale(1) translateX(10px)', 50);
+            setTimeout(() => el.style.transform = 'scale(1) translateX(-10px)', 100);
+            setTimeout(() => el.style.transform = 'scale(1) translateX(0)', 150);
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('PWA Service Worker Aktif!'))
+                    .catch(err => console.log('SW Error:', err));
+            });
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>
