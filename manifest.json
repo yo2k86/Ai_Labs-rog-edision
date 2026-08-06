@@ -1,7 +1,7 @@
 {
 "name": "Ailabs Mini Browser",
-"short_name": "Ailabs",
-"description": "Secure Mini Browser Portal for Ailabs System",
+"short_name": "Ailabs Pro",
+"description": "Ailabs Developer Protocol Browser with ROG Interface",
 "start_url": "/",
 "display": "standalone",
 "background_color": "#050505",
@@ -9,13 +9,13 @@
 "orientation": "portrait",
 "icons": [
 {
-"src": "https://i.ibb.co.com/DgtSyw0H/icon-192.png",
+"src": "logo.png",
 "sizes": "192x192",
 "type": "image/png",
 "purpose": "any maskable"
 },
 {
-"src": "https://i.ibb.co.com/DgtSyw0H/icon-192.png",
+"src": "logo.png",
 "sizes": "512x512",
 "type": "image/png",
 "purpose": "any maskable"
